@@ -11,7 +11,7 @@ import SwiftUI
 struct SpeedometerApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+          DashboardView(locationManager: LocationManager(), viewModel: DashbordViewModel())
         }
     }
 }
