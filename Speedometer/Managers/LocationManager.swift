@@ -56,11 +56,10 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
       }
       // Set up CoreLocation for speed data
       locationManager.delegate = self
-      locationManager.desiredAccuracy = kCLLocationAccuracyBest
-//      locationManager.distanceFilter = 10 // Update every 10 meters
-      locationManager.allowsBackgroundLocationUpdates = true
-
       locationManager.requestWhenInUseAuthorization()
+      locationManager.desiredAccuracy = kCLLocationAccuracyBest
+      //      locationManager.distanceFilter = 10 // Update every 10 meters
+      locationManager.allowsBackgroundLocationUpdates = true
       locationManager.startUpdatingLocation()
     }
   }

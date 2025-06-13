@@ -34,9 +34,22 @@
 		D267479A2DFA1E1500A4B0DA /* Notes.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = Notes.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		D25A0CE12DFCDCB8000D9139 /* Exceptions for "Speedometer" folder in "Speedometer" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = D237850F2DEF67F600BA160A /* Speedometer */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		D23785122DEF67F600BA160A /* Speedometer */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				D25A0CE12DFCDCB8000D9139 /* Exceptions for "Speedometer" folder in "Speedometer" target */,
+			);
 			path = Speedometer;
 			sourceTree = "<group>";
 		};
@@ -407,6 +420,7 @@
 				DEVELOPMENT_TEAM = NA72JR8K9D;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Speedometer/Info.plist;
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "We need your location to track your drive.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "We need your location to track your drive.";
 				INFOPLIST_KEY_NSMotionUsageDescription = "We need motion data to analyze your driving behavior.";
@@ -438,6 +452,7 @@
 				DEVELOPMENT_TEAM = NA72JR8K9D;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Speedometer/Info.plist;
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "We need your location to track your drive.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "We need your location to track your drive.";
 				INFOPLIST_KEY_NSMotionUsageDescription = "We need motion data to analyze your driving behavior.";
