@@ -9,12 +9,17 @@ import SwiftUI
 import CoreLocation
 
 struct DashboardView: View {
-   @ObservedObject private var locationManager: LocationManager
+  @ObservedObject var locationManager: LocationManager
   @ObservedObject var vm: DashbordViewModel
-
-  init(locationManager: LocationManager, viewModel: DashbordViewModel) {
+  let style: GForceMeterStyle
+  let maxTime: Double = 10.0 // Total time span for the y-axis (e.g., 10 seconds)
+  let timeInterval: Double = 0.1 // Time interval between data points (e.g., 0.1 seconds)
+  let accelerationRange: ClosedRange<Double> = -1.0...1.0 // Example range for acceleration
+  
+  init(locationManager: LocationManager, viewModel: DashbordViewModel, style: GForceMeterStyle = DefaultGForceMeterStyle()) {
     self.locationManager = locationManager
     self.vm = viewModel
+    self.style = style
   }
 
   let gradient = Gradient(colors: [.green, .yellow, .orange, .red])
@@ -45,6 +50,7 @@ struct DashboardView: View {
       Spacer()
       speedometer
       Spacer()
+      gMeter
     }
     .animation(.easeInOut, value: vm.displayedSpeed)
     .animation(.easeInOut, value: speedAngle)

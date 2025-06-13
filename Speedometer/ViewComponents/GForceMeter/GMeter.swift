@@ -7,37 +7,16 @@
 
 import SwiftUI
 
-// Style protocol for theming
-protocol GForceMeterStyle {
-  var dotColor: Color { get }
-  var tailColor: Color { get }
-  var seismographLineColor: Color { get }
-  var seismographBackgroundColor: Color { get }
-}
-
-// Default theme
-struct DefaultGForceMeterStyle: GForceMeterStyle {
-  var dotColor: Color = .blue
-  var tailColor: Color = .blue.opacity(0.5)
-  var seismographLineColor: Color = .green
-  var seismographBackgroundColor: Color = .clear
-}
-
-// Dark theme
-struct DarkGForceMeterStyle: GForceMeterStyle {
-  var dotColor: Color = .white
-  var tailColor: Color = .white.opacity(0.5)
-  var seismographLineColor: Color = .yellow
-  var seismographBackgroundColor: Color = .black
-}
-
 // G-Force Dot Display
 struct GForceDotView: View {
   let style: GForceMeterStyle
-  let currentAcceleration: (x: Double, y: Double)
-  let history: [(x: Double, y: Double)]
+  let currentAcceleration: CGPoint
+  let history: [CGPoint]
   let xAccelerationRange: ClosedRange<Double>
   let yAccelerationRange: ClosedRange<Double>
+
+  // State for animatable current point
+  @State private var animatedPoint: CGPoint = .zero
 
   var body: some View {
     GeometryReader { geometry in
@@ -55,12 +34,12 @@ struct GForceDotView: View {
         (1 - (accY - yMin) / (yMax - yMin)) * height // y increases upwards
       }
 
-      let currentPoint = CGPoint(x: mapX(currentAcceleration.x), y: mapY(currentAcceleration.y))
+      let targetPoint = CGPoint(x: mapX(currentAcceleration.x), y: mapY(currentAcceleration.y))
       let historyPoints = history.map { CGPoint(x: mapX($0.x), y: mapY($0.y)) }
 
       ZStack {
         if !historyPoints.isEmpty {
-          let points = historyPoints + [currentPoint]
+          let points = historyPoints + [animatedPoint]
           let N = points.count - 1
           ForEach(0..<N, id: \.self) { i in
             let start = points[i]
@@ -76,7 +55,17 @@ struct GForceDotView: View {
         Circle()
           .fill(style.dotColor)
           .frame(width: 10, height: 10)
-          .position(currentPoint)
+          .position(animatedPoint)
+      }
+      .onChange(of: currentAcceleration) { _, newValue in
+        // Animate to the new target point
+        withAnimation(.easeInOut(duration: 0.2)) {
+          animatedPoint = CGPoint(x: mapX(newValue.x), y: mapY(newValue.y))
+        }
+      }
+      .onAppear {
+        // Initialize animatedPoint on first render
+        animatedPoint = targetPoint
       }
     }
   }
@@ -99,22 +88,30 @@ struct HistoryPath: Shape {
 
   func path(in rect: CGRect) -> Path {
     Path { path in
-      if dataPoints.count >= 1 {
+      if dataPoints.count >= 2 {
         var points = dataPoints
         if !points.isEmpty {
           // Update the latest point's value with the animated value
           points[points.count - 1].value = animatedLatestValue
         }
 
-        for (index, point) in points.enumerated() {
-          let animatedTime = point.time - timeOffset
-          let x = (point.value - minValue) / (maxValue - minValue) * rect.width
-          let y = (-animatedTime / maxTime) * rect.height
-          if index == 0 {
-            path.move(to: CGPoint(x: x, y: y))
-          } else {
-            path.addLine(to: CGPoint(x: x, y: y))
-          }
+        let N = points.count - 1
+        for i in 0..<N {
+          let startPoint = points[i]
+          let endPoint = points[i + 1]
+
+          let startX = (startPoint.value - minValue) / (maxValue - minValue) * rect.width
+          let startY = (-(startPoint.time - timeOffset) / maxTime) * rect.height
+          let endX = (endPoint.value - minValue) / (maxValue - minValue) * rect.width
+          let endY = (-(endPoint.time - timeOffset) / maxTime) * rect.height
+
+          let opacity = Double(i + 1) / Double(N)
+
+          // Create a subpath for each segment to allow individual styling
+          path.addPath(Path { subPath in
+            subPath.move(to: CGPoint(x: startX, y: startY))
+            subPath.addLine(to: CGPoint(x: endX, y: endY))
+          })
         }
       }
     }
@@ -298,7 +295,7 @@ struct SeismographView: View {
 }
 
 struct DemoView: View {
-  @State private var history: [(x: Double, y: Double)] = []
+  @State private var history: [CGPoint] = []
   @State private var phase: Double = 0.0
   let timer = Timer.publish(every: 0.2, on: .main, in: .common).autoconnect()
   let style = DefaultGForceMeterStyle()
@@ -311,7 +308,7 @@ struct DemoView: View {
     VStack {
       GForceDotView(
         style: style,
-        currentAcceleration: history.last ?? (0, 0),
+        currentAcceleration: history.last ?? CGPoint.zero,
         history: history.dropLast().suffix(10),
         xAccelerationRange: xRange,
         yAccelerationRange: yRange
@@ -335,7 +332,7 @@ struct DemoView: View {
   func updateData() {
     let newX = 3 * sin(phase)
     let newY = 3 * cos(phase)
-    history.append((newX, newY))
+    history.append(CGPoint(x: newX, y: newY))
     if history.count > Int(maxTime / timeInterval) {
       history.removeFirst()
     }

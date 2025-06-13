@@ -9,6 +9,30 @@ import SwiftUI
 
 extension DashboardView {
 
+  var gMeter: some View {
+    let currentTime = Date()
+    let startTime = currentTime.addingTimeInterval(-maxTime)
+    let history = locationManager.telemetryHistory
+      .filter { $0.timestamp > startTime } // Keep only recent data
+      .map { $0.gforceX } // Extract X-axis acceleration
+
+    return VStack {
+      SeismographView(
+        style: style, // Replace with your actual GForceMeterStyle
+        history: history,
+        accelerationRange: accelerationRange,
+        timeInterval: timeInterval,
+        maxTime: maxTime
+      )
+      .onAppear {
+        locationManager.startRecording() // Start collecting data when the view appears
+      }
+      .onDisappear {
+        locationManager.stopRecording() // Stop when the view disappears
+      }
+    }
+  }
+
   var speedometer: some View {
     GeometryReader { geometry in
       let size = min(geometry.size.width, geometry.size.height)
