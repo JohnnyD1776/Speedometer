@@ -9,10 +9,6 @@ import CoreLocation
 import CoreMotion
 import Combine
 
-import CoreLocation
-import CoreMotion
-import Combine
-
 struct TelemetryDataPoint: Codable {
   let timestamp: Date
   let speed: Double
@@ -38,11 +34,14 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
   private var inTurn: Bool = false
   private var turnLateralAcceleration: Double = 0.0
   private var turnDurationLeft: Int = 0
+  let motionActivityManager = CMMotionActivityManager()
 
   /// Initialize with an option to simulate data
   init(isSimulating: Bool = false) {
     self.isSimulating = isSimulating
     super.init()
+    startMotionUpdates()
+
     if isSimulating {
       startSimulation()
     } else {
@@ -57,6 +56,10 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
       }
       // Set up CoreLocation for speed data
       locationManager.delegate = self
+      locationManager.desiredAccuracy = kCLLocationAccuracyBest
+//      locationManager.distanceFilter = 10 // Update every 10 meters
+      locationManager.allowsBackgroundLocationUpdates = true
+
       locationManager.requestWhenInUseAuthorization()
       locationManager.startUpdatingLocation()
     }
@@ -64,6 +67,20 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
   /// Simulate speed and G-force when in simulation mode
   private var phase: Double = 0.0
+
+
+  func startMotionUpdates() {
+    if CMMotionActivityManager.isActivityAvailable() {
+      motionActivityManager.startActivityUpdates(to: .main) { activity in
+        if let activity = activity {
+          print("Motion activity: \(activity)")
+        }
+      }
+    } else {
+      print("Motion activity not available")
+    }
+  }
+
 
   private func startSimulation() {
     speed = 0.0 // Initialize speed
@@ -102,6 +119,16 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
   func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
     if !isSimulating && !isPlayingBack, let location = locations.last, location.speed >= 0 {
       self.speed = location.speed
+    }
+  }
+
+  func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+    print("Location error: \(error)")
+  }
+
+  func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
+    if status == .authorizedWhenInUse {
+      locationManager.startUpdatingLocation()
     }
   }
 
