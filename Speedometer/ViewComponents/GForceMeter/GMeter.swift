@@ -83,14 +83,64 @@ struct GForceDotView: View {
 }
 
 // Seismograph-Style Display
+// Struct to hold value and time for each data point
+struct DataPoint {
+  var value: Double // G-force value
+  var time: Double  // Time ago (negative, 0 is most recent)
+}
+
+struct HistoryPath: Shape {
+  var dataPoints: [DataPoint]
+  let minValue: Double
+  let maxValue: Double
+  let maxTime: Double
+  var timeOffset: Double // Animation offset for smooth scrolling
+  var animatedLatestValue: Double // Animated value for the latest point
+
+  func path(in rect: CGRect) -> Path {
+    Path { path in
+      if dataPoints.count >= 1 {
+        var points = dataPoints
+        if !points.isEmpty {
+          // Update the latest point's value with the animated value
+          points[points.count - 1].value = animatedLatestValue
+        }
+
+        for (index, point) in points.enumerated() {
+          let animatedTime = point.time - timeOffset
+          let x = (point.value - minValue) / (maxValue - minValue) * rect.width
+          let y = (-animatedTime / maxTime) * rect.height
+          if index == 0 {
+            path.move(to: CGPoint(x: x, y: y))
+          } else {
+            path.addLine(to: CGPoint(x: x, y: y))
+          }
+        }
+      }
+    }
+  }
+
+  var animatableData: AnimatablePair<Double, Double> {
+    get {
+      AnimatablePair(timeOffset, animatedLatestValue)
+    }
+    set {
+      timeOffset = newValue.first
+      animatedLatestValue = newValue.second
+    }
+  }
+}
+
 struct SeismographView: View {
   let style: GForceMeterStyle
   let history: [Double] // X acceleration values, most recent last
   let accelerationRange: ClosedRange<Double>
-  let timeInterval: Double = 0.3
-  let maxTime: Double = 5.0
+  let timeInterval: Double // Time interval between data points in seconds
+  let maxTime: Double // Total time span in seconds for the y-axis
 
-  @State private var animatedHistory: [Double] = []
+  @State private var dataPoints: [DataPoint] = []
+  @State private var timeOffset: Double = 0.0
+  @State private var animatedLatestValue: Double = 0.0
 
   var body: some View {
     VStack {
@@ -99,7 +149,6 @@ struct SeismographView: View {
         let height = geometry.size.height
         let minValue = accelerationRange.lowerBound
         let maxValue = accelerationRange.upperBound
-        let M = animatedHistory.count
 
         ZStack {
           // Background
@@ -117,14 +166,21 @@ struct SeismographView: View {
           // Vertical lines for normal G-force range (-0.5 and +0.5)
           normalRangeLines(width: width, height: height, minValue: minValue, maxValue: maxValue)
 
-          // History path (excluding the most recent point)
-          historyPath(width: width, height: height, minValue: minValue, maxValue: maxValue, M: M)
+          // History path with smooth scrolling
+          HistoryPath(
+            dataPoints: dataPoints,
+            minValue: minValue,
+            maxValue: maxValue,
+            maxTime: maxTime,
+            timeOffset: timeOffset,
+            animatedLatestValue: animatedLatestValue
+          )
+          .stroke(style.seismographLineColor, lineWidth: 2)
 
           // Current G-force dot at the top
-          if M >= 1 {
-            let currentValue = animatedHistory.last!
-            let x = (currentValue - minValue) / (maxValue - minValue) * width
-            let y: CGFloat = 0
+          if let latest = dataPoints.last {
+            let x = (animatedLatestValue - minValue) / (maxValue - minValue) * width
+            let y: CGFloat = 0 // Always at the top
             Circle()
               .fill(style.seismographLineColor)
               .frame(width: 10, height: 10)
@@ -132,17 +188,43 @@ struct SeismographView: View {
           }
         }
       }
-      Text("Cornering G")
+      Text("GForce Acceleration")
         .font(.caption)
         .foregroundColor(.black)
     }
     .onChange(of: history) { newHistory in
-      withAnimation(.linear(duration: timeInterval)) {
-        animatedHistory = newHistory
-      }
+      updateDataPoints(with: newHistory)
     }
     .onAppear {
-      animatedHistory = history
+      updateDataPoints(with: history, animate: false)
+    }
+  }
+
+  private func updateDataPoints(with history: [Double], animate: Bool = true) {
+    // Convert history to DataPoints with time values
+    var newDataPoints = history.enumerated().map { index, value in
+      DataPoint(value: value, time: -Double(history.count - 1 - index) * timeInterval)
+    }
+
+    // Cap at maxTime
+    newDataPoints = newDataPoints.filter { $0.time >= -maxTime }
+
+    if animate && !dataPoints.isEmpty && history.count > dataPoints.count {
+      // Determine the previous value for animation
+      let previousValue = dataPoints.last?.value ?? newDataPoints[newDataPoints.count - 2].value
+      animatedLatestValue = previousValue
+      timeOffset = 0.0
+      dataPoints = newDataPoints
+
+      withAnimation(.linear(duration: timeInterval)) {
+        animatedLatestValue = newDataPoints.last!.value
+        timeOffset = timeInterval
+      }
+    } else {
+      // Initial setup or no animation
+      dataPoints = newDataPoints
+      animatedLatestValue = newDataPoints.last?.value ?? 0.0
+      timeOffset = 0.0
     }
   }
 
@@ -205,152 +287,19 @@ struct SeismographView: View {
       path.move(to: CGPoint(x: x2, y: 0))
       path.addLine(to: CGPoint(x: x2, y: height))
     }
-    .stroke(Color.gray, lineWidth: 1)
-  }
-  private func historyPath(width: CGFloat, height: CGFloat, minValue: Double, maxValue: Double, M: Int) -> some View {
-    Path { path in
-      if M >= 2 {
-        for (index, value) in animatedHistory.dropLast(1).enumerated() { // Exclude the most recent point
-          let time_ago = Double(M - 1 - index) * timeInterval
-          let y = min((time_ago / maxTime) * height, height)
-          let x = (value - minValue) / (maxValue - minValue) * width
-          if index == 0 {
-            path.move(to: CGPoint(x: x, y: y))
-          } else {
-            path.addLine(to: CGPoint(x: x, y: y))
-          }
-        }
-      }
-    }
-    .stroke(style.seismographLineColor, lineWidth: 2)
+    .stroke(style.seismographLineColor, lineWidth: 1)
   }
 }
-
-//struct SeismographView: View {
-//  let style: GForceMeterStyle
-//  let history: [Double] // X acceleration values, most recent last
-//  let accelerationRange: ClosedRange<Double>
-//  let timeInterval: Double = 0.3
-//  let maxTime: Double = 5
-//
-//  @State private var animatedHistory: [Double] = []
-//
-//  var body: some View {
-//    VStack {
-//      GeometryReader { geometry in
-//        let width = geometry.size.width
-//        let height = geometry.size.height
-//        let minValue = accelerationRange.lowerBound
-//        let maxValue = accelerationRange.upperBound
-//        let M = animatedHistory.count
-//
-//        ZStack {
-//          // Background
-//          Rectangle().fill(style.seismographBackgroundColor)
-//
-//          // Grid lines and labels
-//          gridLines(width: width, height: height, minValue: minValue, maxValue: maxValue)
-//
-//          // Vertical lines for normal G-force range (-0.5 and +0.5)
-//          let x1 = (-0.5 - minValue) / (maxValue - minValue) * width
-//          let x2 = (0.5 - minValue) / (maxValue - minValue) * width
-//          Path { path in
-//            path.move(to: CGPoint(x: x1, y: 0))
-//            path.addLine(to: CGPoint(x: x1, y: height))
-//            path.move(to: CGPoint(x: x2, y: 0))
-//            path.addLine(to: CGPoint(x: x2, y: height))
-//          }
-//          .stroke(style.seismographLineColor, lineWidth: 1)
-//
-//          // History path (trailing G-force history)
-//          if M >= 2 {
-//            Path { path in
-//              for (index, value) in animatedHistory.enumerated() {
-//                let x = (value - minValue) / (maxValue - minValue) * width
-//                let y = (1 - Double(index) / Double(M - 1)) * height
-//                if index == 0 {
-//                  path.move(to: CGPoint(x: x, y: y))
-//                } else {
-//                  path.addLine(to: CGPoint(x: x, y: y))
-//                }
-//              }
-//            }
-//            .stroke(style.seismographLineColor, lineWidth: 2)
-//          }
-//
-//          // Current G-force dot (at the top)
-//          if M >= 1 {
-//            let currentValue = animatedHistory.last!
-//            let x = (currentValue - minValue) / (maxValue - minValue) * width
-//            let y: CGFloat = 0
-//            Circle()
-//              .fill(style.seismographLineColor)
-//              .frame(width: 10, height: 10)
-//              .position(x: x, y: y)
-//          }
-//        }
-//      }
-//      // Title at the bottom
-//      Text("Cornering G")
-//        .font(.caption)
-//        .foregroundColor(.black)
-//    }
-//    .onChange(of: history) { newHistory in
-//      withAnimation(.linear(duration: timeInterval)) {
-//        animatedHistory = newHistory
-//      }
-//    }
-//    .onAppear {
-//      animatedHistory = history
-//    }
-//  }
-//
-//  private func gridLines(width: CGFloat, height: CGFloat, minValue: Double, maxValue: Double) -> some View {
-//    let gForceStep = 0.5 // G-force interval for vertical lines
-//    let timeStep = 1.0  // Time interval for horizontal lines (1 second)
-//
-//    return ZStack {
-//      // Vertical grid lines (G-force)
-//      ForEach(-3...3, id: \.self) { i in
-//        let value = Double(i) * gForceStep
-//        if accelerationRange.contains(value) {
-//          let x = (value - minValue) / (maxValue - minValue) * width
-//          Path { path in
-//            path.move(to: CGPoint(x: x, y: 0))
-//            path.addLine(to: CGPoint(x: x, y: height))
-//          }
-//          .stroke(Color.gray.opacity(0.5), lineWidth: 1)
-//          Text("\(value, specifier: "%.1f")")
-//            .font(.caption)
-//            .position(x: x, y: height + 10)
-//        }
-//      }
-//
-//      // Horizontal grid lines (Time)
-//      ForEach(0..<Int(maxTime / timeStep), id: \.self) { i in
-//        let time = Double(i) * timeStep
-//        let y = (1 - time / maxTime) * height
-//        Path { path in
-//          path.move(to: CGPoint(x: 0, y: y))
-//          path.addLine(to: CGPoint(x: width, y: y))
-//        }
-//        .stroke(Color.gray.opacity(0.5), lineWidth: 1)
-//        Text("\(time, specifier: "%.0f")s")
-//          .font(.caption)
-//          .position(x: -10, y: y)
-//      }
-//    }
-//  }
-//}
-
 
 struct DemoView: View {
   @State private var history: [(x: Double, y: Double)] = []
   @State private var phase: Double = 0.0
   let timer = Timer.publish(every: 0.2, on: .main, in: .common).autoconnect()
   let style = DefaultGForceMeterStyle()
-  let xRange: ClosedRange<Double> = -5...5
+  let xRange: ClosedRange<Double> = -3...3
   let yRange: ClosedRange<Double> = -5...5
+  let timeInterval: Double = 0.2 // Matches timer interval
+  let maxTime: Double = 5    // 10 seconds of history
 
   var body: some View {
     VStack {
@@ -365,10 +314,12 @@ struct DemoView: View {
 
       SeismographView(
         style: style,
-        history: history.map { $0.x }.suffix(50),
-        accelerationRange: xRange
+        history: history.map { $0.x }.suffix(Int(maxTime / timeInterval)),
+        accelerationRange: xRange,
+        timeInterval: timeInterval,
+        maxTime: maxTime
       )
-      .frame(height: 100)
+      .frame(width: 320, height: 200)
     }
     .onReceive(timer) { _ in
       self.updateData()
@@ -379,7 +330,7 @@ struct DemoView: View {
     let newX = 3 * sin(phase)
     let newY = 3 * cos(phase)
     history.append((newX, newY))
-    if history.count > 50 {
+    if history.count > Int(maxTime / timeInterval) {
       history.removeFirst()
     }
     phase += 0.1
