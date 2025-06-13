@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		D267479B2DFA1E1500A4B0DA /* Notes.md in Resources */ = {isa = PBXBuildFile; fileRef = D267479A2DFA1E1500A4B0DA /* Notes.md */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		D237851E2DEF67F700BA160A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,6 +31,7 @@
 		D23785102DEF67F600BA160A /* Speedometer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Speedometer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D237851D2DEF67F700BA160A /* SpeedometerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpeedometerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D23785272DEF67F700BA160A /* SpeedometerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpeedometerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D267479A2DFA1E1500A4B0DA /* Notes.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = Notes.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -75,6 +80,7 @@
 		D23785072DEF67F600BA160A = {
 			isa = PBXGroup;
 			children = (
+				D267479A2DFA1E1500A4B0DA /* Notes.md */,
 				D23785122DEF67F600BA160A /* Speedometer */,
 				D23785202DEF67F700BA160A /* SpeedometerTests */,
 				D237852A2DEF67F700BA160A /* SpeedometerUITests */,
@@ -212,6 +218,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D267479B2DFA1E1500A4B0DA /* Notes.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
