@@ -137,7 +137,7 @@ struct SeismographView: View {
   let accelerationRange: ClosedRange<Double>
   let timeInterval: Double // Time interval between data points in seconds
   let maxTime: Double // Total time span in seconds for the y-axis
-
+  let stepSize: Double = 0.5
   @State private var dataPoints: [DataPoint] = []
   @State private var timeOffset: Double = 0.0
   @State private var animatedLatestValue: Double = 0.0
@@ -209,7 +209,7 @@ struct SeismographView: View {
     // Cap at maxTime
     newDataPoints = newDataPoints.filter { $0.time >= -maxTime }
 
-    if animate && !dataPoints.isEmpty && history.count > dataPoints.count {
+    if animate && !dataPoints.isEmpty {
       // Determine the previous value for animation
       let previousValue = dataPoints.last?.value ?? newDataPoints[newDataPoints.count - 2].value
       animatedLatestValue = previousValue
@@ -231,8 +231,10 @@ struct SeismographView: View {
   private func gridLines(width: CGFloat, height: CGFloat, minValue: Double, maxValue: Double) -> some View {
     ZStack {
       // Vertical grid lines (G-force)
-      ForEach(-3...3, id: \.self) { i in
-        let value = Double(i) * 0.5
+      let range = maxValue - minValue
+      let steps = Int((maxValue - minValue) / stepSize)
+      ForEach(0...steps, id: \.self) { i in
+        let value = minValue + Double(i) * stepSize
         if accelerationRange.contains(value) {
           let x = (value - minValue) / (maxValue - minValue) * width
           Path { path in
@@ -243,7 +245,7 @@ struct SeismographView: View {
         }
       }
 
-      // Horizontal grid lines (Time)
+      // Horizontal grid lines (Time) - unchanged
       ForEach(0...Int(maxTime), id: \.self) { k in
         let time_ago = Double(k)
         let y = (time_ago / maxTime) * height
@@ -257,19 +259,23 @@ struct SeismographView: View {
   }
 
   private func xAxisLabels(width: CGFloat, minValue: Double, maxValue: Double) -> some View {
-    ForEach(-3...3, id: \.self) { i in
-      let value = Double(i) * 0.5
-      if accelerationRange.contains(value) {
-        let x = (value - minValue) / (maxValue - minValue) * width
-        Text("\(value, specifier: "%.1f")")
-          .font(.caption)
-          .position(x: x, y: 10) // Positioned at the top
+    let range = maxValue - minValue
+    let steps = Int((maxValue - minValue) / stepSize) - 1
+    return Group {
+      ForEach(1...steps, id: \.self) { i in
+        let value = minValue + Double(i) * stepSize
+        if accelerationRange.contains(value) {
+          let x = (value - minValue) / (maxValue - minValue) * width
+          Text("\(value, specifier: "%.1f")")
+            .font(.caption)
+            .position(x: x, y: 10)
+        }
       }
     }
   }
 
   private func yAxisLabels(height: CGFloat) -> some View {
-    ForEach(1...Int(maxTime), id: \.self) { k in // Start from 1 to avoid overlap with y=0
+    ForEach(1...Int(maxTime), id: \.self) { k in
       let time_ago = Double(k)
       let y = (time_ago / maxTime) * height
       Text("\(time_ago, specifier: "%.0f")s")
@@ -279,8 +285,8 @@ struct SeismographView: View {
   }
 
   private func normalRangeLines(width: CGFloat, height: CGFloat, minValue: Double, maxValue: Double) -> some View {
-    let x1 = (-0.5 - minValue) / (maxValue - minValue) * width
-    let x2 = (0.5 - minValue) / (maxValue - minValue) * width
+    let x1 = (-stepSize - minValue) / (maxValue - minValue) * width
+    let x2 = (stepSize - minValue) / (maxValue - minValue) * width
     return Path { path in
       path.move(to: CGPoint(x: x1, y: 0))
       path.addLine(to: CGPoint(x: x1, y: height))
@@ -319,7 +325,7 @@ struct DemoView: View {
         timeInterval: timeInterval,
         maxTime: maxTime
       )
-      .frame(width: 320, height: 200)
+      .frame(width: 320, height: 300)
     }
     .onReceive(timer) { _ in
       self.updateData()
