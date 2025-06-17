@@ -9,64 +9,82 @@ import CoreLocation
 import CoreMotion
 import Combine
 
-struct TelemetryDataPoint: Codable {
-  let timestamp: Date
-  let speed: Double
-  let gforceX: Double
-  let gforceY: Double
-  let gforceZ: Double
-}
-
-class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
-  private let locationManager = CLLocationManager()
-  private var motionManager: CMMotionManager?
+class LocationManager: NSObject, ObservableObject {
   @Published var speed: Double = 0.0 // Speed in meters per second
   @Published var gforce: CMAcceleration = .init() // G-force
   @Published var telemetryHistory: [TelemetryDataPoint] = []
+  @Published var telemetryRecording: [TelemetryDataPoint] = []
   @Published var isPlayingBack: Bool = false
+
   private var isSimulating: Bool
   private var simulationTimer: Timer?
   private var recordingTimer: Timer?
-  private var previousSpeed: Double?
-  private var previousTimestamp: Date?
+  private var animationTimer: Timer?
 
   // Variables for simulating lateral forces (cornering)
-  private var inTurn: Bool = false
-  private var turnLateralAcceleration: Double = 0.0
-  private var turnDurationLeft: Int = 0
-  let motionActivityManager = CMMotionActivityManager()
+  private var phase: Double = 0.0
+
+  private var motionManager: CMMotionManager?
+  private let motionActivityManager = CMMotionActivityManager()
+  private let locationManager = CLLocationManager()
 
   /// Initialize with an option to simulate data
   init(isSimulating: Bool = false) {
     self.isSimulating = isSimulating
     super.init()
-    startMotionUpdates()
 
     if isSimulating {
       startSimulation()
     } else {
-      // Set up CoreMotion for accelerometer data
-      motionManager = CMMotionManager()
-      motionManager?.deviceMotionUpdateInterval = 0.1 // 10 Hz updates
-      motionManager?.startDeviceMotionUpdates(to: .main) { [weak self] motion, error in
-        guard let self = self, let motion = motion else { return }
-        if !self.isPlayingBack {
-          self.gforce = motion.userAcceleration
-        }
-      }
-      // Set up CoreLocation for speed data
-      locationManager.delegate = self
-      locationManager.requestWhenInUseAuthorization()
-      locationManager.desiredAccuracy = kCLLocationAccuracyBest
-      //      locationManager.distanceFilter = 10 // Update every 10 meters
-      locationManager.allowsBackgroundLocationUpdates = true
-      locationManager.startUpdatingLocation()
+      startMotionUpdates()
+      startMotionManager()
+      startLocationManager()
+      startSmoothUpdateTimer()
     }
   }
 
-  /// Simulate speed and G-force when in simulation mode
-  private var phase: Double = 0.0
+  /// Clean up resources
+  deinit {
+    simulationTimer?.invalidate()
+    recordingTimer?.invalidate()
+    animationTimer?.invalidate()
+    motionManager?.stopDeviceMotionUpdates()
+  }
 
+  func startSmoothUpdateTimer() {
+    animationTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+      guard let self = self else { return }
+      if self.isPlayingBack { return }
+      let dataPoint = TelemetryDataPoint(
+        timestamp: Date(),
+        speed: self.speed,
+        gforceX: self.gforce.x,
+        gforceY: self.gforce.y,
+        gforceZ: self.gforce.z
+      )
+      self.telemetryHistory.append(dataPoint)
+    }
+  }
+  /// Set up CoreLocation for speed data
+  func startLocationManager() {
+    locationManager.delegate = self
+    locationManager.requestWhenInUseAuthorization()
+    locationManager.desiredAccuracy = kCLLocationAccuracyBest
+    //      locationManager.distanceFilter = 10 // Update every 10 meters
+    locationManager.allowsBackgroundLocationUpdates = true
+    locationManager.startUpdatingLocation()
+  }
+
+  func startMotionManager() {
+    motionManager = CMMotionManager()
+    motionManager?.deviceMotionUpdateInterval = 0.1 // 10 Hz updates
+    motionManager?.startDeviceMotionUpdates(to: .main) { [weak self] motion, error in
+      guard let self = self, let motion = motion else { return }
+      if !self.isPlayingBack {
+        self.gforce = motion.userAcceleration
+      }
+    }
+  }
 
   func startMotionUpdates() {
     if CMMotionActivityManager.isActivityAvailable() {
@@ -79,7 +97,10 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
       print("Motion activity not available")
     }
   }
+}
 
+/// Simulation Functions
+extension LocationManager {
 
   private func startSimulation() {
     speed = 0.0 // Initialize speed
@@ -111,8 +132,12 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
       // Set the G-force values
       self.gforce = CMAcceleration(x: gforceX, y: gforceY, z: 0.0)
+
     }
   }
+}
+
+extension LocationManager: CLLocationManagerDelegate {
 
   /// Handle location updates from GPS
   func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
@@ -131,6 +156,11 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
   }
 
+}
+
+/// Functions related to Recording
+extension LocationManager {
+
   /// Start recording telemetry data at 0.1-second intervals
   func startRecording() {
     recordingTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
@@ -143,7 +173,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         gforceY: self.gforce.y,
         gforceZ: self.gforce.z
       )
-      self.telemetryHistory.append(dataPoint)
+      self.telemetryRecording.append(dataPoint)
     }
   }
 
@@ -158,10 +188,10 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     let encoder = JSONEncoder()
     encoder.dateEncodingStrategy = .iso8601
     do {
-      let data = try encoder.encode(telemetryHistory)
+      let data = try encoder.encode(telemetryRecording)
       let fileURL = getDocumentsDirectory().appendingPathComponent(fileName)
       try data.write(to: fileURL)
-      telemetryHistory.removeAll() // Clear memory after saving
+      telemetryRecording.removeAll() // Clear memory after saving
     } catch {
       print("Failed to save run: \(error)")
     }
@@ -185,7 +215,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
   func playbackRun(data: [TelemetryDataPoint]) {
     guard !data.isEmpty else { return }
     self.isPlayingBack = true
-    self.telemetryHistory.removeAll()
+    self.telemetryRecording.removeAll()
     var index = 0
     let startTime = Date()
     let runStartTime = data[0].timestamp
@@ -200,7 +230,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         let point = data[index]
         self.speed = point.speed
         self.gforce = CMAcceleration(x: point.gforceX, y: point.gforceY, z: point.gforceZ)
-        self.telemetryHistory.append(point)
+        self.telemetryRecording.append(point)
         index += 1
       }
       if index >= data.count {
@@ -215,10 +245,4 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
   }
 
-  /// Clean up resources
-  deinit {
-    simulationTimer?.invalidate()
-    recordingTimer?.invalidate()
-    motionManager?.stopDeviceMotionUpdates()
-  }
 }

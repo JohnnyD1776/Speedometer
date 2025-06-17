@@ -57,7 +57,7 @@ struct GForceDotView: View {
           .frame(width: 10, height: 10)
           .position(animatedPoint)
       }
-      .onChange(of: currentAcceleration) { _, newValue in
+      .onChange(of: currentAcceleration) {  newValue in
         // Animate to the new target point
         withAnimation(.easeInOut(duration: 0.2)) {
           animatedPoint = CGPoint(x: mapX(newValue.x), y: mapY(newValue.y))
@@ -130,14 +130,23 @@ struct HistoryPath: Shape {
 
 struct SeismographView: View {
   let style: GForceMeterStyle
-  let history: [Double] // X acceleration values, most recent last
+  @Binding var history: [Double] // X acceleration values, most recent last
   let accelerationRange: ClosedRange<Double>
   let timeInterval: Double // Time interval between data points in seconds
-  let maxTime: Double // Total time span in seconds for the y-axis
-  let stepSize: Double = 0.5
+  let maxTime: Double  // Total time span in seconds for the y-axis
+  let stepSize: Double
   @State private var dataPoints: [DataPoint] = []
   @State private var timeOffset: Double = 0.0
   @State private var animatedLatestValue: Double = 0.0
+
+  init(style: GForceMeterStyle, history: Binding<[Double]>, accelerationRange: ClosedRange<Double> = -1.0...1.0, timeInterval: Double = 0.1, maxTime: Double = 10, stepSize: Double = 0.5) {
+    self.style = style
+    self._history = history
+    self.accelerationRange = accelerationRange
+    self.timeInterval = timeInterval
+    self.maxTime = maxTime
+    self.stepSize = stepSize
+  }
 
   var body: some View {
     VStack {
@@ -213,7 +222,7 @@ struct SeismographView: View {
       timeOffset = 0.0
       dataPoints = newDataPoints
 
-      withAnimation(.linear(duration: timeInterval)) {
+      withAnimation(.easeInOut) {
         animatedLatestValue = newDataPoints.last!.value
         timeOffset = timeInterval
       }
@@ -296,6 +305,7 @@ struct SeismographView: View {
 
 struct DemoView: View {
   @State private var history: [CGPoint] = []
+  @State private var xHistory: [Double] = [] // New state for x values
   @State private var phase: Double = 0.0
   let timer = Timer.publish(every: 0.2, on: .main, in: .common).autoconnect()
   let style = DefaultGForceMeterStyle()
@@ -306,18 +316,18 @@ struct DemoView: View {
 
   var body: some View {
     VStack {
-      GForceDotView(
-        style: style,
-        currentAcceleration: history.last ?? CGPoint.zero,
-        history: history.dropLast().suffix(10),
-        xAccelerationRange: xRange,
-        yAccelerationRange: yRange
-      )
-      .frame(height: 200)
+//      GForceDotView(
+//        style: style,
+//        currentAcceleration: history.last ?? CGPoint.zero,
+//        history: history.dropLast().suffix(10),
+//        xAccelerationRange: xRange,
+//        yAccelerationRange: yRange
+//      )
+//      .frame(height: 200)
 
       SeismographView(
         style: style,
-        history: history.map { $0.x }.suffix(Int(maxTime / timeInterval)),
+        history: $xHistory,
         accelerationRange: xRange,
         timeInterval: timeInterval,
         maxTime: maxTime
@@ -330,11 +340,17 @@ struct DemoView: View {
   }
 
   func updateData() {
-    let newX = 3 * sin(phase)
-    let newY = 3 * cos(phase)
-    history.append(CGPoint(x: newX, y: newY))
-    if history.count > Int(maxTime / timeInterval) {
+    let newX = 3 * sin(phase) // Double value
+    let newY = 3 * cos(phase) // Double value
+    history.append(CGPoint(x: newX, y: newY)) // CGPoint converts Double to CGFloat
+    xHistory.append(newX) // Store as Double
+
+    let maxPoints = Int(maxTime / timeInterval) // e.g., 25 points
+    if history.count > maxPoints {
       history.removeFirst()
+    }
+    if xHistory.count > maxPoints {
+      xHistory.removeFirst()
     }
     phase += 0.1
   }
