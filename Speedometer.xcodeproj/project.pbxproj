@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		D206E21B2E01B45D00C804C0 /* LocalConfig.plist in Resources */ = {isa = PBXBuildFile; fileRef = D206E21A2E01B45D00C804C0 /* LocalConfig.plist */; };
-		D267479B2DFA1E1500A4B0DA /* Notes.md in Resources */ = {isa = PBXBuildFile; fileRef = D267479A2DFA1E1500A4B0DA /* Notes.md */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -33,7 +32,6 @@
 		D23785102DEF67F600BA160A /* Speedometer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Speedometer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D237851D2DEF67F700BA160A /* SpeedometerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpeedometerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D23785272DEF67F700BA160A /* SpeedometerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpeedometerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		D267479A2DFA1E1500A4B0DA /* Notes.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = Notes.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -96,7 +94,6 @@
 			isa = PBXGroup;
 			children = (
 				D206E21A2E01B45D00C804C0 /* LocalConfig.plist */,
-				D267479A2DFA1E1500A4B0DA /* Notes.md */,
 				D23785122DEF67F600BA160A /* Speedometer */,
 				D23785202DEF67F700BA160A /* SpeedometerTests */,
 				D237852A2DEF67F700BA160A /* SpeedometerUITests */,
@@ -235,7 +232,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				D206E21B2E01B45D00C804C0 /* LocalConfig.plist in Resources */,
-				D267479B2DFA1E1500A4B0DA /* Notes.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -353,6 +349,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
@@ -410,6 +407,7 @@
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;

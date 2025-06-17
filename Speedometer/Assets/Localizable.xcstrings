@@ -1,0 +1,17 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Main.Title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speedometer"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
