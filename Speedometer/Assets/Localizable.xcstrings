@@ -11,6 +11,83 @@
           }
         }
       }
+    },
+    "WidgetOrganizer.AddWidget.Warning.NoDropSpace" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No space at this position"
+          }
+        }
+      }
+    },
+    "WidgetOrganizer.AddWidget.Warning.NoDropSpaceForSize" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No space for %@ size"
+          }
+        }
+      }
+    },
+    "WidgetOrganizer.AddWidget.Warning.NoSpace" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No space available for this widget"
+          }
+        }
+      }
+    },
+    "WidgetOrganizer.MountDeviceWarning" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please mount your device for safety"
+          }
+        }
+      }
+    },
+    "WidgetOrganizer.MountDeviceWarning.Accessibility" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Safety warning: Please mount your device"
+          }
+        }
+      }
+    },
+    "WidgetOrganizer.Title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speedometer Dashboard"
+          }
+        }
+      }
+    },
+    "WidgetOrganizer.Toolbar.Accessibility" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Widget"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"
