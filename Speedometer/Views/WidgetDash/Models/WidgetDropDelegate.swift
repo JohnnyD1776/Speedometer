@@ -9,7 +9,7 @@ import SwiftUI
 // Drag-and-drop delegate
 struct WidgetDropDelegate: DropDelegate {
   let widget: WidgetComponent
-  let viewModel: WidgetOrganizerViewModel
+  let widgetManager: WidgetOrganizer
   let geometry: GeometryProxy
   @Binding var draggedWidget: WidgetComponent?
 
@@ -19,9 +19,9 @@ struct WidgetDropDelegate: DropDelegate {
 
     item.loadObject(ofClass: NSString.self) { (string, _) in
       if let draggedID = UUID(uuidString: String(describing: string)),
-         let draggedWidget = viewModel.widgets.first(where: { $0.id == draggedID }) {
+         let draggedWidget = widgetManager.widgets.first(where: { $0.id == draggedID }) {
         let dropLocation = info.location
-        let cellSize = viewModel.gridConfig.cellSize
+        let cellSize = widgetManager.gridConfig.cellSize
         let padding: CGFloat = 16
         let originalCenterX = (CGFloat(draggedWidget.position.column) + CGFloat(draggedWidget.size.gridSize.width) / 2) * cellSize + padding
         let originalCenterY = (CGFloat(draggedWidget.position.row) + CGFloat(draggedWidget.size.gridSize.height) / 2) * cellSize + padding
@@ -39,7 +39,7 @@ struct WidgetDropDelegate: DropDelegate {
         )
 
         DispatchQueue.main.async {
-          self.viewModel.moveWidget(id: draggedID, to: newPosition)
+          self.widgetManager.moveWidget(id: draggedID, to: newPosition)
           self.draggedWidget = nil
         }
       }
@@ -50,7 +50,7 @@ struct WidgetDropDelegate: DropDelegate {
   func dropUpdated(info: DropInfo) -> DropProposal? {
     if let dragged = draggedWidget {
       let dropLocation = info.location
-      let cellSize = viewModel.gridConfig.cellSize
+      let cellSize = widgetManager.gridConfig.cellSize
       let padding: CGFloat = 16
       let originalCenterX = (CGFloat(dragged.position.column) + CGFloat(dragged.size.gridSize.width) / 2) * cellSize + padding
       let originalCenterY = (CGFloat(dragged.position.row) + CGFloat(dragged.size.gridSize.height) / 2) * cellSize + padding
@@ -61,16 +61,16 @@ struct WidgetDropDelegate: DropDelegate {
       let newColumn = Int((newCenterX - padding - cellSize / 2) / cellSize)
       let newRow = Int((newCenterY - padding - cellSize / 2) / cellSize)
       let adjustedPosition = GridPosition(
-        row: max(0, min(newRow, viewModel.gridConfig.rows - dragged.size.gridSize.height)),
-        column: max(0, min(newColumn, viewModel.gridConfig.columns - dragged.size.gridSize.width)),
+        row: max(0, min(newRow, widgetManager.gridConfig.rows - dragged.size.gridSize.height)),
+        column: max(0, min(newColumn, widgetManager.gridConfig.columns - dragged.size.gridSize.width)),
         page: dragged.position.page
       )
       self.draggedWidget = WidgetComponent(
         id: dragged.id,
         type: dragged.type,
         size: dragged.size,
-        style: dragged.style,
-        position: adjustedPosition
+        position: adjustedPosition,
+        theme: dragged.theme
       )
     }
     return DropProposal(operation: .move)

@@ -6,9 +6,9 @@
 //
 import SwiftUI
 
-// Grid background
 struct GridBackgroundView: View {
   let config: GridConfig
+  @Environment(\.theme) private var theme
 
   var body: some View {
     GeometryReader { geometry in
@@ -24,7 +24,7 @@ struct GridBackgroundView: View {
           path.addLine(to: CGPoint(x: geometry.size.width, y: y))
         }
       }
-      .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+      .stroke(theme.tertiaryColor.opacity(0.2), lineWidth: 1)
     }
   }
 }

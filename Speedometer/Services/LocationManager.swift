@@ -39,8 +39,8 @@ class LocationManager: NSObject, ObservableObject {
       startMotionUpdates()
       startMotionManager()
       startLocationManager()
-      startSmoothUpdateTimer()
     }
+    startSmoothUpdateTimer()
   }
 
   /// Clean up resources
@@ -103,36 +103,27 @@ class LocationManager: NSObject, ObservableObject {
 extension LocationManager {
 
   private func startSimulation() {
-    speed = 0.0 // Initialize speed
+    speed = 0.0
     simulationTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
       guard let self = self else { return }
       if self.isPlayingBack { return }
 
-      // Increment phase for sinusoidal variation
       self.phase += 0.1
-
-      // Define amplitudes for G-forces
-      let A = 0.5 // Longitudinal G-force amplitude
-      let B = 0.3 // Lateral G-force amplitude
-
-      // Calculate sinusoidal G-forces
-      let gforceY = A * sin(self.phase) // Longitudinal (acceleration/braking)
-      let gforceX = B * cos(self.phase) // Lateral (cornering)
-
-      // Update speed based on longitudinal acceleration (in m/s^2)
+      let A = 0.5
+      let B = 0.3
+      let gforceY = A * sin(self.phase)
+      let gforceX = B * cos(self.phase)
       let deltaT = 0.1
       self.speed += (gforceY * 9.8) * deltaT
 
-      // Clamp speed to realistic range: 0 to 30 m/s (108 km/h)
       if self.speed < 0 {
         self.speed = 0
       } else if self.speed > 30 {
         self.speed = 30
       }
 
-      // Set the G-force values
       self.gforce = CMAcceleration(x: gforceX, y: gforceY, z: 0.0)
-
+      Log.debug("LocationManager: Simulated speed: \(self.speed), gforce: (\(gforceX), \(gforceY))")
     }
   }
 }

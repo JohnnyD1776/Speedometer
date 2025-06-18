@@ -1,6 +1,75 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%.0fs" : {
+
+    },
+    "%.1f" : {
+
+    },
+    "%@" : {
+
+    },
+    "%@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@"
+          }
+        }
+      }
+    },
+    "%@ widget, %@ size" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ widget, %2$@ size"
+          }
+        }
+      }
+    },
+    "%lld" : {
+
+    },
+    "Add" : {
+
+    },
+    "Add widget" : {
+
+    },
+    "Add Widget" : {
+
+    },
+    "App Default" : {
+
+    },
+    "Cancel" : {
+
+    },
+    "Cancel adding widget" : {
+
+    },
+    "G-Force Acceleration" : {
+
+    },
+    "G-Force Dot, current acceleration %.1f X, %.1f Y" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "G-Force Dot, current acceleration %1$.1f X, %2$.1f Y"
+          }
+        }
+      }
+    },
+    "KPH" : {
+
+    },
+    "Long-press and drag to reposition, or long-press for options" : {
+
+    },
     "Main.Title" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11,6 +80,65 @@
           }
         }
       }
+    },
+    "MPH" : {
+
+    },
+    "Notification: %@" : {
+
+    },
+    "Remove" : {
+
+    },
+    "Seismograph, latest G-Force %.1f" : {
+
+    },
+    "Select widget size" : {
+
+    },
+    "Select widget theme" : {
+
+    },
+    "Select widget type" : {
+
+    },
+    "Size" : {
+
+    },
+    "Speed" : {
+
+    },
+    "Speed Gauge, current speed %.0f, top speed %.0f" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Speed Gauge, current speed %1$.0f, top speed %2$.0f"
+          }
+        }
+      }
+    },
+    "Speedometer, current speed %.1f %@, target speed %.1f" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Speedometer, current speed %1$.1f %2$@, target speed %3$.1f"
+          }
+        }
+      }
+    },
+    "Theme" : {
+
+    },
+    "Unit" : {
+
+    },
+    "Unit toggle, current unit %@" : {
+
+    },
+    "Widget Type" : {
+
     },
     "WidgetOrganizer.AddWidget.Warning.NoDropSpace" : {
       "extractionState" : "manual",

@@ -6,32 +6,39 @@
 //
 import SwiftUI
 
-// Main organizer view
 struct WidgetOrganizerView: View {
-  @StateObject private var viewModel = WidgetOrganizerViewModel()
+  @EnvironmentObject private var widgetManager: WidgetOrganizer
+  @EnvironmentObject private var dataManager: DataManager
+  @EnvironmentObject private var locationManager: LocationManager
+
   @State private var isAddingWidget = false
-  @State private var selectedWidgetType: WidgetType = .speedDial
-  @State private var selectedStyle: WidgetStyle = .leather
-  @State private var draggedWidget: WidgetComponent?
   @State private var selectedPage: Int = 0
 
   var body: some View {
     NavigationView {
       ZStack {
-        Color(.systemBackground).ignoresSafeArea()
+        Color(.systemBackground)
+          .ignoresSafeArea()
+          .applyStyle(.container(.background))
 
         TabView(selection: $selectedPage) {
-          ForEach(0..<viewModel.pageCount, id: \.self) { page in
-            GridView(page: page, viewModel: viewModel, draggedWidget: $draggedWidget, selectedPage: $selectedPage)
-              .frame(maxWidth: .infinity, maxHeight: .infinity)
-              .tag(page)
+          ForEach(0..<widgetManager.pageCount, id: \.self) { page in
+            GridView(
+              selectedPage: $selectedPage,
+              page: page
+            )
+            .environmentObject(widgetManager)
+            .environmentObject(dataManager)
+            .environmentObject(locationManager)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .tag(page)
           }
         }
         .tabViewStyle(.page)
         .indexViewStyle(.page(backgroundDisplayMode: .always))
         .animation(.easeInOut, value: selectedPage)
 
-        if !viewModel.isMounted {
+        if !widgetManager.isMounted {
           Text("WidgetOrganizer.MountDeviceWarning")
             .foregroundColor(.white)
             .padding()
@@ -41,12 +48,12 @@ struct WidgetOrganizerView: View {
             .accessibilityLabel("WidgetOrganizer.MountDeviceWarning.Accessibility")
         }
 
-        if let toast = viewModel.toast {
+        if let toast = widgetManager.toast {
           ToastView(message: toast.message)
             .transition(.move(edge: .bottom).combined(with: .opacity))
             .onAppear {
               DispatchQueue.main.asyncAfter(deadline: .now() + toast.duration) {
-                viewModel.toast = nil
+                widgetManager.toast = nil
               }
             }
         }
@@ -59,7 +66,7 @@ struct WidgetOrganizerView: View {
         .accessibilityLabel("WidgetOrganizer.Toolbar.Accessibility")
       }
       .sheet(isPresented: $isAddingWidget) {
-        AddWidgetView(viewModel: viewModel, isPresented: $isAddingWidget)
+        AddWidgetView(isPresented: $isAddingWidget)
       }
     }
     .onAppear {
@@ -69,12 +76,22 @@ struct WidgetOrganizerView: View {
 }
 
 struct WidgetOrganizerView_Previews: PreviewProvider {
+  static var dependency: SpeedometerDependency = .init()
+
   static var previews: some View {
     Group {
       WidgetOrganizerView()
+        .environment(\.theme, .bmwLeather)
+        .environmentObject(dependency.widgetManager)
+        .environmentObject(dependency.dataManager)
+        .environmentObject(dependency.locationManager)
         .previewDevice("iPhone 14")
         .previewDisplayName("iPhone 14")
       WidgetOrganizerView()
+        .environment(\.theme, .racingFlat)
+        .environmentObject(dependency.widgetManager)
+        .environmentObject(dependency.dataManager)
+        .environmentObject(dependency.locationManager)
         .previewDevice("iPad Pro (12.9-inch) (6th generation)")
         .previewDisplayName("iPad Pro")
     }

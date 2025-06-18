@@ -6,31 +6,34 @@
 //
 import SwiftUI
 
-// Widget container view (handles dragging)
 struct WidgetContainerView: View {
-  let widget: WidgetComponent
-  @ObservedObject var viewModel: WidgetOrganizerViewModel
-  let geometry: GeometryProxy
+  @Environment(\.theme) private var theme
+  @EnvironmentObject private var widgetManager: WidgetOrganizer
+  @EnvironmentObject private var dataManager: DataManager
+  @EnvironmentObject private var locationManager: LocationManager
   @Binding var draggedWidget: WidgetComponent?
   @Binding var selectedPage: Int
   @State private var isDragging = false
   @State private var previewOffset: CGSize = .zero
   @State private var lastSnappedPosition: GridPosition?
   @State private var lastPageSwitched: Int?
+  let widget: WidgetComponent
+  let geometry: GeometryProxy
 
   var body: some View {
-    WidgetView(widget: widget, viewModel: viewModel, isDragging: isDragging)
+    WidgetView(widget: widget, isDragging: isDragging)
       .draggable(widget.id.uuidString) {
-        WidgetView(widget: widget, viewModel: viewModel, isDragging: true)
+        WidgetView(widget: widget, isDragging: true)
           .frame(
-            width: CGFloat(widget.size.gridSize.width) * viewModel.gridConfig.cellSize,
-            height: CGFloat(widget.size.gridSize.height) * viewModel.gridConfig.cellSize
+            width: CGFloat(widget.size.gridSize.width) * widgetManager.gridConfig.cellSize,
+            height: CGFloat(widget.size.gridSize.height) * widgetManager.gridConfig.cellSize
           )
           .opacity(0.5)
+          .environment(\.theme, widget.theme?.theme ?? theme)
       }
       .onDrop(of: [.text], delegate: WidgetDropDelegate(
         widget: widget,
-        viewModel: viewModel,
+        widgetManager: widgetManager,
         geometry: geometry,
         draggedWidget: $draggedWidget
       ))
@@ -42,13 +45,11 @@ struct WidgetContainerView: View {
               draggedWidget = widget
               UINotificationFeedbackGenerator().notificationOccurred(.warning)
             }
-            // Follow finger for visual preview
             previewOffset = CGSize(
               width: value.translation.width,
               height: value.translation.height
             )
-            // Calculate widget's center for grid snapping
-            let cellSize = viewModel.gridConfig.cellSize
+            let cellSize = widgetManager.gridConfig.cellSize
             let padding: CGFloat = 16
             let originalCenterX = (CGFloat(widget.position.column) + CGFloat(widget.size.gridSize.width) / 2) * cellSize + padding
             let originalCenterY = (CGFloat(widget.position.row) + CGFloat(widget.size.gridSize.height) / 2) * cellSize + padding
@@ -57,7 +58,6 @@ struct WidgetContainerView: View {
             let newColumn = Int((newCenterX - padding - cellSize / 2) / cellSize)
             let newRow = Int((newCenterY - padding - cellSize / 2) / cellSize)
 
-            // Detect edge for page swipe
             let edgeThreshold: CGFloat = 50
             let screenWidth = UIScreen.main.bounds.width
             var newPage = selectedPage
@@ -68,7 +68,7 @@ struct WidgetContainerView: View {
                 UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 lastPageSwitched = newPage
               }
-            } else if value.location.x > screenWidth - edgeThreshold && selectedPage < viewModel.pageCount - 1 {
+            } else if value.location.x > screenWidth - edgeThreshold && selectedPage < widgetManager.pageCount - 1 {
               if lastPageSwitched != selectedPage + 1 {
                 newPage = selectedPage + 1
                 selectedPage = newPage
@@ -80,19 +80,18 @@ struct WidgetContainerView: View {
             }
 
             let adjustedPosition = GridPosition(
-              row: max(0, min(newRow, viewModel.gridConfig.rows - widget.size.gridSize.height)),
-              column: max(0, min(newColumn, viewModel.gridConfig.columns - widget.size.gridSize.width)),
+              row: max(0, min(newRow, widgetManager.gridConfig.rows - widget.size.gridSize.height)),
+              column: max(0, min(newColumn, widgetManager.gridConfig.columns - widget.size.gridSize.width)),
               page: newPage
             )
             draggedWidget = WidgetComponent(
               id: widget.id,
               type: widget.type,
               size: widget.size,
-              style: widget.style,
-              position: adjustedPosition
+              position: adjustedPosition,
+              theme: widget.theme
             )
-            // Haptic feedback for grid snapping
-            if viewModel.isPositionAvailable(for: widget.size, at: adjustedPosition, excluding: widget.id),
+            if widgetManager.isPositionAvailable(for: widget.size, at: adjustedPosition, excluding: widget.id),
                adjustedPosition != lastSnappedPosition {
               UIImpactFeedbackGenerator(style: .light).impactOccurred()
               lastSnappedPosition = adjustedPosition
@@ -101,7 +100,7 @@ struct WidgetContainerView: View {
           .onEnded { _ in
             isDragging = false
             if let dragged = draggedWidget {
-              viewModel.moveWidget(id: widget.id, to: dragged.position)
+              widgetManager.moveWidget(id: widget.id, to: dragged.position)
             }
             draggedWidget = nil
             previewOffset = .zero
@@ -111,5 +110,9 @@ struct WidgetContainerView: View {
       )
       .offset(isDragging ? previewOffset : .zero)
       .animation(.spring(), value: previewOffset)
+      .environment(\.theme, widget.theme?.theme ?? theme)
+      .environmentObject(widgetManager)
+      .environmentObject(dataManager)
+      .environmentObject(locationManager)
   }
 }

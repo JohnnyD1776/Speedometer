@@ -7,13 +7,24 @@
 import Foundation
 
 enum WidgetType: String, Codable, CaseIterable {
-  case speedDial
-  case gMeter
+  case gForceDot
+  case speedometer
+  case speedGauge
+  case seismograph
+  case unitToggle
 
   var supportedSizes: [WidgetSize] {
     switch self {
-    case .speedDial: return [.small, .mediumHorizontal, .large]
-    case .gMeter: return [.small, .mediumVertical, .large, .extraLarge]
+    case .gForceDot:
+      return [.mediumHorizontal, .large]
+    case .speedometer:
+      return [.large, .extraLarge]
+    case .speedGauge:
+      return [.small, .mediumHorizontal]
+    case .seismograph:
+      return [.mediumVertical, .large, .extraLarge]
+    case .unitToggle:
+      return [.mediumHorizontal]
     }
   }
 }

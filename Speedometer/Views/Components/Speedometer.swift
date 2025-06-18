@@ -7,13 +7,15 @@
 
 import SwiftUI
 
+import SwiftUI
+
 struct Speedometer: View {
-  let gradient = Gradient(colors: [.green, .yellow, .orange, .red])
   var speedAngle: Angle
   @Binding var displayedSpeed: Double
   @Binding var type: SpeedType
   @Binding var targetSpeed: Double
   @Binding var topSpeed: Double
+  @Environment(\.theme) private var theme
 
   var body: some View {
     GeometryReader { geometry in
@@ -24,44 +26,71 @@ struct Speedometer: View {
       let innerCircleRatio = 0.86
       ZStack {
         Circle()
-          .foregroundStyle(gradient)
+          .fill(LinearGradient(gradient: theme.meterGradient, startPoint: .leading, endPoint: .trailing))
           .frame(width: size * outerCircleRatio)
 
         Circle()
-          .foregroundStyle(.red)
+          .fill(theme.accentColor)
           .frame(width: size * innerCircleRatio)
 
         ZStack {
           RoundedRectangle(cornerRadius: 2)
-            .foregroundStyle(.white)
+            .fill(theme.primaryColor)
             .frame(width: size / 3.3, height: 5)
             .offset(x: size / 4.5)
         }
         .rotationEffect(speedAngle)
 
         Text("\(String(format: "%.1f", displayedSpeed)) \(type == .mph ? "MPH" : "KPH")")
-          .fontDesign(.rounded)
-          .foregroundStyle(.white)
-          .fontWeight(.light)
-          .font(.system(size: size / 9))
+          .font(theme.primaryFont)
+          .foregroundColor(theme.primaryColor)
+          .applyStyle(.text(.body))
           .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
           .padding(size / 5)
+
         Circle()
-          .foregroundStyle(gradient)
+          .fill(LinearGradient(gradient: theme.meterGradient, startPoint: .leading, endPoint: .trailing))
           .frame(width: size * 0.2)
+
         Text("\(String(format: "%.1f", targetSpeed))")
+          .font(theme.primaryFont)
+          .foregroundColor(theme.secondaryColor)
+          .applyStyle(.text(.caption))
 
         ForEach(Array(stride(from: 0, through: topSpeed, by: 20)), id: \.self) { speed in
           let angle = Angle(degrees: 360 * (speed / topSpeed) - 90).radians
-          let x =  radius * cos(angle)
-          let y =  radius * sin(angle)
+          let x = radius * cos(angle)
+          let y = radius * sin(angle)
 
           Text("\(Int(speed))")
             .offset(x: x, y: y)
-            .foregroundColor(.white)
-            .font(.system(size: size / 25))
+            .font(theme.primaryFont)
+            .foregroundColor(theme.primaryColor)
+            .applyStyle(.text(.caption))
         }
       }
+      .animation(.default, value: speedAngle)
+      .accessibilityLabel("Speedometer, current speed \(displayedSpeed, specifier: "%.1f") \(type == .mph ? "MPH" : "KPH"), target speed \(targetSpeed, specifier: "%.1f")")
+      .id(displayedSpeed) // Force redraw when displayedSpeed changes
     }
   }
+}
+
+#Preview {
+  struct SpeedometerPreview: View {
+    @StateObject var dataManager = DataManager(locationManager: LocationManager(isSimulating: true))
+
+    var body: some View {
+      Speedometer(
+        speedAngle: dataManager.speedAngle,
+        displayedSpeed: $dataManager.displayedSpeed,
+        type: $dataManager.type,
+        targetSpeed: $dataManager.targetSpeed,
+        topSpeed: $dataManager.topSpeed
+      )
+      .environment(\.theme, .bmwLeather)
+
+    }
+  }
+  return SpeedometerPreview()
 }

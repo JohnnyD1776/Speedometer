@@ -21,6 +21,11 @@ GAMIFY:
 - Challenges: Fastest 0-62 this week
 - Virtual Garage: Store your car profiles with metrics tied to them
 - Sharable Race Statistics for Instagram
+- Fastest Lap for any recorded Lap Route - Globally shared
+- Fastest 0.62MPH within X radius....
+  - See where you have the fastest sprint time
+  - Icons of trophies.
+  - positions are according to a Lat/Long Grid of 5 mile squares.
 
 
 THEME and ACCESSBILITY:

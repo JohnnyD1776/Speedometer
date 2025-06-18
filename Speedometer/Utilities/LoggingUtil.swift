@@ -28,7 +28,7 @@ enum LogConfig {
     } else if config["LOG_DETAIL_LEVEL"] != nil {
       assertionFailure("Invalid LOG_DETAIL_LEVEL: \(String(describing: config["LOG_DETAIL_LEVEL"]))")
     }
-    return .warning
+    return .debug
   }()
 
   static var disablePrefix: Bool = {

@@ -7,7 +7,7 @@
 import SwiftUI
 
 // View model to manage widget components
-class WidgetOrganizerViewModel: ObservableObject {
+class WidgetOrganizer: ObservableObject {
   @Published var widgets: [WidgetComponent] = []
   @Published var isMounted: Bool = true
   @Published var toast: Toast?
@@ -21,11 +21,10 @@ class WidgetOrganizerViewModel: ObservableObject {
 
   var pageCount: Int {
     let highestPage = widgets.map { $0.position.page }.max() ?? 0
-    // Add one empty page if the last page has widgets
     return widgets.contains(where: { $0.position.page == highestPage }) ? highestPage + 2 : highestPage + 1
   }
 
-  func addWidget(type: WidgetType, style: WidgetStyle = .leather, size: WidgetSize? = nil) {
+  func addWidget(type: WidgetType, size: WidgetSize? = nil, theme: WidgetTheme? = nil) {
     let targetSize = size ?? type.supportedSizes.first ?? .small
     guard type.supportedSizes.contains(targetSize) else { return }
 
@@ -34,8 +33,8 @@ class WidgetOrganizerViewModel: ObservableObject {
         id: UUID(),
         type: type,
         size: targetSize,
-        style: style,
-        position: position
+        position: position,
+        theme: theme
       )
       widgets.append(newWidget)
       saveWidgets()
@@ -171,5 +170,4 @@ class WidgetOrganizerViewModel: ObservableObject {
       widgets = decoded
     }
   }
-
 }

@@ -11,6 +11,6 @@ struct WidgetComponent: Identifiable, Codable {
   let id: UUID
   var type: WidgetType
   var size: WidgetSize
-  var style: WidgetStyle
   var position: GridPosition
+  var theme: WidgetTheme? // Optional theme override
 }

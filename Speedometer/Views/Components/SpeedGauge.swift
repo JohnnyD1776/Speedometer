@@ -10,8 +10,7 @@ struct SpeedGauge: View {
   @Binding var current: Double
   @Binding var topValue: Double
   @Binding var maxValue: Double
-
-  let gradient = Gradient(colors: [.green, .yellow, .orange, .red])
+  @Environment(\.theme) private var theme
 
   init(current: Binding<Double>, topValue: Binding<Double>, maxValue: Binding<Double>) {
     self._current = current
@@ -22,18 +21,30 @@ struct SpeedGauge: View {
   var body: some View {
     Gauge(value: current, in: 0...topValue) {
       Text("Speed")
+        .font(theme.primaryFont)
+        .foregroundColor(theme.secondaryColor)
+        .applyStyle(.text(.caption))
     } currentValueLabel: {
       Text("\(Int(current))")
+        .font(theme.primaryFont)
+        .foregroundColor(theme.primaryColor)
+        .applyStyle(.text(.body))
     } minimumValueLabel: {
       Text("\(Int(0))")
+        .font(theme.primaryFont)
+        .foregroundColor(theme.secondaryColor)
+        .applyStyle(.text(.caption))
     } maximumValueLabel: {
       Text("\(Int(topValue))")
+        .font(theme.primaryFont)
+        .foregroundColor(theme.secondaryColor)
+        .applyStyle(.text(.caption))
     }
     .gaugeStyle(.accessoryCircular)
-    .tint(gradient)
+    .tint(LinearGradient(gradient: theme.meterGradient, startPoint: .leading, endPoint: .trailing))
+    .accessibilityLabel("Speed Gauge, current speed \(current, specifier: "%.0f"), top speed \(topValue, specifier: "%.0f")")
   }
 }
-
 
 
 #Preview {
