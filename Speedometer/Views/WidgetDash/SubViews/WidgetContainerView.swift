@@ -30,6 +30,9 @@ struct WidgetContainerView: View {
           )
           .opacity(0.5)
           .environment(\.theme, widget.theme?.theme ?? theme)
+          .environmentObject(widgetManager)
+          .environmentObject(dataManager)
+          .environmentObject(locationManager)
       }
       .onDrop(of: [.text], delegate: WidgetDropDelegate(
         widget: widget,
@@ -50,13 +53,13 @@ struct WidgetContainerView: View {
               height: value.translation.height
             )
             let cellSize = widgetManager.gridConfig.cellSize
-            let padding: CGFloat = 16
-            let originalCenterX = (CGFloat(widget.position.column) + CGFloat(widget.size.gridSize.width) / 2) * cellSize + padding
-            let originalCenterY = (CGFloat(widget.position.row) + CGFloat(widget.size.gridSize.height) / 2) * cellSize + padding
+            let originalCenterX = (CGFloat(widget.position.column + 1) * cellSize) - (CGFloat(widget.size.gridSize.width) / 2)
+            let originalCenterY = (CGFloat(widget.position.row + 1) * cellSize) - (CGFloat(widget.size.gridSize.height) / 2)
             let newCenterX = originalCenterX + value.translation.width
             let newCenterY = originalCenterY + value.translation.height
-            let newColumn = Int((newCenterX - padding - cellSize / 2) / cellSize)
-            let newRow = Int((newCenterY - padding - cellSize / 2) / cellSize)
+            let newColumn = Int((newCenterX - cellSize / 2) / cellSize)
+            let newRow = Int((newCenterY - cellSize / 2) / cellSize)
+
 
             let edgeThreshold: CGFloat = 50
             let screenWidth = UIScreen.main.bounds.width
@@ -84,6 +87,7 @@ struct WidgetContainerView: View {
               column: max(0, min(newColumn, widgetManager.gridConfig.columns - widget.size.gridSize.width)),
               page: newPage
             )
+
             draggedWidget = WidgetComponent(
               id: widget.id,
               type: widget.type,
@@ -91,6 +95,7 @@ struct WidgetContainerView: View {
               position: adjustedPosition,
               theme: widget.theme
             )
+
             if widgetManager.isPositionAvailable(for: widget.size, at: adjustedPosition, excluding: widget.id),
                adjustedPosition != lastSnappedPosition {
               UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -98,17 +103,19 @@ struct WidgetContainerView: View {
             }
           }
           .onEnded { _ in
-            isDragging = false
-            if let dragged = draggedWidget {
-              widgetManager.moveWidget(id: widget.id, to: dragged.position)
+            withAnimation(.spring()) {
+              isDragging = false
+              if let dragged = draggedWidget {
+                widgetManager.moveWidget(id: widget.id, to: dragged.position)
+              }
+              draggedWidget = nil
+              previewOffset = .zero
+              lastSnappedPosition = nil
+              lastPageSwitched = nil
             }
-            draggedWidget = nil
-            previewOffset = .zero
-            lastSnappedPosition = nil
-            lastPageSwitched = nil
           }
       )
-      .offset(isDragging ? previewOffset : .zero)
+      .offset(previewOffset)
       .animation(.spring(), value: previewOffset)
       .environment(\.theme, widget.theme?.theme ?? theme)
       .environmentObject(widgetManager)

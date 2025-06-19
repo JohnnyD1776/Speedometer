@@ -18,6 +18,10 @@ struct WidgetView: View {
     widget.theme?.theme ?? globalTheme
   }
 
+  private var widgetTheme: ViewStyleConfiguration {
+    theme.style(for: .container(.widget))
+  }
+
   private var history: [CGPoint] {
     locationManager.telemetryHistory.compactMap { CGPoint(x: $0.gforceX, y: $0.gforceY) }
   }
@@ -25,7 +29,6 @@ struct WidgetView: View {
   var body: some View {
     ZStack {
       Color.clear
-        .widgetStyle()
         .environment(\.theme, theme)
 
       switch widget.type {
@@ -62,19 +65,20 @@ struct WidgetView: View {
           .environment(\.theme, theme)
       }
     }
+    .padding(widgetTheme.padding)
     .frame(
       width: CGFloat(widget.size.gridSize.width) * widgetManager.gridConfig.cellSize,
       height: CGFloat(widget.size.gridSize.height) * widgetManager.gridConfig.cellSize
     )
-    .cornerRadius(theme.widgetCornerRadius)
-    .shadow(radius: isDragging ? 10 : 5)
+    .cornerRadius(widgetTheme.cornerRadius)
+    .shadow(radius: isDragging ? widgetTheme.cornerRadius * 2 : widgetTheme.cornerRadius)
     .overlay(
-      RoundedRectangle(cornerRadius: theme.widgetCornerRadius)
-        .stroke(widgetManager.isMounted ? Color.clear : theme.accentColor, lineWidth: 2)
+      RoundedRectangle(cornerRadius: widgetTheme.cornerRadius)
+        .stroke(widgetManager.isMounted ? Color.clear : widgetTheme.accentColor, lineWidth: 2)
     )
     .overlay(
-      RoundedRectangle(cornerRadius: theme.widgetCornerRadius)
-        .stroke(isDragging && widgetManager.isPositionAvailable(for: widget.size, at: widget.position, excluding: widget.id) ? theme.secondaryColor : Color.clear, lineWidth: 2)
+      RoundedRectangle(cornerRadius: widgetTheme.cornerRadius)
+        .stroke(isDragging && widgetManager.isPositionAvailable(for: widget.size, at: widget.position, excluding: widget.id) ? widgetTheme.backgroundColor : Color.clear, lineWidth: 2)
     )
     .scaleEffect(isDragging ? 1.1 : 1.0)
     .animation(.spring(), value: isDragging)

@@ -10,7 +10,7 @@ import SwiftUI
 import SwiftUI
 
 struct AddWidgetView: View {
-  @EnvironmentObject private var dependency: SpeedometerDependency
+  @EnvironmentObject private var widgetManager: WidgetOrganizer
   @Binding var isPresented: Bool
   @State private var selectedType: WidgetType = .speedGauge
   @State private var selectedSize: WidgetSize = .small
@@ -54,7 +54,7 @@ struct AddWidgetView: View {
         }
         ToolbarItem(placement: .confirmationAction) {
           Button("Add") {
-            dependency.widgetManager.addWidget(
+            widgetManager.addWidget(
               type: selectedType,
               size: selectedSize,
               theme: selectedTheme

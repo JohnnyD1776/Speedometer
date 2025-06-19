@@ -11,11 +11,11 @@ class WidgetOrganizer: ObservableObject {
   @Published var widgets: [WidgetComponent] = []
   @Published var isMounted: Bool = true
   @Published var toast: Toast?
-  let gridConfig: GridConfig
+  @Published var gridConfig: GridConfig
   let maxPages = 5
 
   init() {
-    gridConfig = GridConfig.forDevice()
+    gridConfig = GridConfig.forDevice(size: UIScreen.main.bounds.size)
     loadWidgets()
   }
 
@@ -91,7 +91,60 @@ class WidgetOrganizer: ObservableObject {
     }
   }
 
-  private func findAvailablePosition(for size: WidgetSize, preferringPage: Int? = nil) -> GridPosition? {
+  func updateGridConfig(for size: CGSize) {
+    Log.debug("Updating grid config for size: \(size)")
+    let newConfig = GridConfig.forDevice(size: size)
+    if newConfig != gridConfig {
+      Log.debug("Grid config changed from \(gridConfig.columns)x\(gridConfig.rows) to \(newConfig.columns)x\(newConfig.rows)")
+      let oldConfig = gridConfig
+      gridConfig = newConfig
+      rearrangeWidgets(oldConfig: oldConfig, newConfig: newConfig)
+    } else {
+      Log.debug("No grid config change needed")
+    }
+  }
+
+  private func rearrangeWidgets(oldConfig: GridConfig, newConfig: GridConfig) {
+    Log.debug("Rearranging widgets for new grid: \(newConfig.columns)x\(newConfig.rows)")
+    var placedWidgets: [WidgetComponent] = []
+    let sortedWidgets = widgets.sorted {
+      $0.position.page < $1.position.page ||
+      ($0.position.page == $1.position.page && $0.position.row < $1.position.row) ||
+      ($0.position.page == $1.position.page && $0.position.row == $1.position.row && $0.position.column < $1.position.column)
+    }
+
+    for widget in sortedWidgets {
+      let relCol = (Double(widget.position.column) + Double(widget.size.gridSize.width) / 2) / Double(oldConfig.columns)
+      let relRow = (Double(widget.position.row) + Double(widget.size.gridSize.height) / 2) / Double(oldConfig.rows)
+
+      let desiredCol = Int((relCol * Double(newConfig.columns) - Double(widget.size.gridSize.width) / 2).rounded())
+      let desiredRow = Int((relRow * Double(newConfig.rows) - Double(widget.size.gridSize.height) / 2).rounded())
+
+      let clampedCol = max(0, min(desiredCol, newConfig.columns - widget.size.gridSize.width))
+      let clampedRow = max(0, min(desiredRow, newConfig.rows - widget.size.gridSize.height))
+      let desiredPosition = GridPosition(row: clampedRow, column: clampedCol, page: widget.position.page)
+
+      Log.debug("Widget \(widget.id): Old pos (\(widget.position.column),\(widget.position.row)), Desired pos (\(clampedCol),\(clampedRow))")
+
+      if isPositionAvailable(for: widget.size, at: desiredPosition, excluding: widget.id, in: placedWidgets) {
+        placedWidgets.append(widget.withPosition(desiredPosition))
+        Log.debug("Placed at desired position: (\(clampedCol),\(clampedRow))")
+      } else if let newPosition = findNearestValidPosition(for: widget.size, near: desiredPosition, excluding: widget.id, in: placedWidgets) {
+        placedWidgets.append(widget.withPosition(newPosition))
+        Log.debug("Placed at nearest position: (\(newPosition.column),\(newPosition.row))")
+      } else {
+        Log.debug("No position available for widget \(widget.id)")
+        if let fallbackPosition = findAvailablePosition(for: widget.size, preferringPage: widget.position.page, in: placedWidgets) {
+          placedWidgets.append(widget.withPosition(fallbackPosition))
+          Log.debug("Placed at fallback position: (\(fallbackPosition.column),\(fallbackPosition.row))")
+        }
+      }
+    }
+    widgets = placedWidgets
+    saveWidgets()
+  }
+
+  private func findAvailablePosition(for size: WidgetSize, preferringPage: Int? = nil, in widgets: [WidgetComponent] = []) -> GridPosition? {
     let (width, height) = size.gridSize
     let pages = preferringPage != nil ? [min(preferringPage!, maxPages - 1)] + Array(0..<maxPages).filter { $0 != preferringPage } : Array(0..<maxPages)
 
@@ -99,7 +152,7 @@ class WidgetOrganizer: ObservableObject {
       for row in 0...(gridConfig.rows - height) {
         for column in 0...(gridConfig.columns - width) {
           let position = GridPosition(row: row, column: column, page: page)
-          if isPositionAvailable(for: size, at: position) {
+          if isPositionAvailable(for: size, at: position, in: widgets) {
             return position
           }
         }
@@ -108,7 +161,7 @@ class WidgetOrganizer: ObservableObject {
     return nil
   }
 
-  private func findNearestValidPosition(for size: WidgetSize, near position: GridPosition, excluding excludeID: UUID?) -> GridPosition? {
+  private func findNearestValidPosition(for size: WidgetSize, near position: GridPosition, excluding excludeID: UUID?, in widgets: [WidgetComponent] = []) -> GridPosition? {
     let (width, height) = size.gridSize
     let page = min(max(0, position.page), maxPages - 1)
     let centerRow = position.row
@@ -119,22 +172,22 @@ class WidgetOrganizer: ObservableObject {
       for row in max(0, centerRow - distance)...min(gridConfig.rows - height, centerRow + distance) {
         for column in max(0, centerColumn - distance)...min(gridConfig.columns - width, centerColumn + distance) {
           let testPosition = GridPosition(row: row, column: column, page: page)
-          if isPositionAvailable(for: size, at: testPosition, excluding: excludeID) {
+          if isPositionAvailable(for: size, at: testPosition, excluding: excludeID, in: widgets) {
             return testPosition
           }
         }
       }
     }
-    return findAvailablePosition(for: size, preferringPage: page)
+    return findAvailablePosition(for: size, preferringPage: page, in: widgets)
   }
 
-  func isPositionAvailable(for size: WidgetSize, at position: GridPosition, excluding excludeID: UUID? = nil) -> Bool {
+  func isPositionAvailable(for size: WidgetSize, at position: GridPosition, excluding excludeID: UUID? = nil, in widgets: [WidgetComponent] = []) -> Bool {
     let (width, height) = size.gridSize
     guard position.row + height <= gridConfig.rows,
           position.column + width <= gridConfig.columns,
           position.page < maxPages else { return false }
 
-    for widget in widgets where widget.id != excludeID {
+    for widget in (self.widgets + widgets).filter({ $0.id != excludeID }) {
       let wPos = widget.position
       let wSize = widget.size.gridSize
       if wPos.page == position.page {
@@ -169,5 +222,11 @@ class WidgetOrganizer: ObservableObject {
        let decoded = try? JSONDecoder().decode([WidgetComponent].self, from: data) {
       widgets = decoded
     }
+  }
+}
+
+extension WidgetComponent {
+  func withPosition(_ position: GridPosition) -> WidgetComponent {
+    return WidgetComponent(id: self.id, type: self.type, size: self.size, position: position, theme: self.theme)
   }
 }

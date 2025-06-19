@@ -15,29 +15,9 @@ struct WidgetOrganizerView: View {
   @State private var selectedPage: Int = 0
 
   var body: some View {
-    NavigationView {
+    GeometryReader { geometry in
       ZStack {
-        Color(.systemBackground)
-          .ignoresSafeArea()
-          .applyStyle(.container(.background))
-
-        TabView(selection: $selectedPage) {
-          ForEach(0..<widgetManager.pageCount, id: \.self) { page in
-            GridView(
-              selectedPage: $selectedPage,
-              page: page
-            )
-            .environmentObject(widgetManager)
-            .environmentObject(dataManager)
-            .environmentObject(locationManager)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .tag(page)
-          }
-        }
-        .tabViewStyle(.page)
-        .indexViewStyle(.page(backgroundDisplayMode: .always))
-        .animation(.easeInOut, value: selectedPage)
-
+        tabsView
         if !widgetManager.isMounted {
           Text("WidgetOrganizer.MountDeviceWarning")
             .foregroundColor(.white)
@@ -57,21 +37,54 @@ struct WidgetOrganizerView: View {
               }
             }
         }
-      }
-      .navigationTitle("WidgetOrganizer.Title")
-      .toolbar {
-        Button(action: { isAddingWidget = true }) {
-          Image(systemName: "plus")
-        }
-        .accessibilityLabel("WidgetOrganizer.Toolbar.Accessibility")
+        headerView
       }
       .sheet(isPresented: $isAddingWidget) {
         AddWidgetView(isPresented: $isAddingWidget)
+          .environmentObject(widgetManager)
+      }
+      .ignoresSafeArea()
+      .onChange(of: geometry.size) { newSize in
+        Log.debug("Geometry size changed: \(newSize)")
+        widgetManager.updateGridConfig(for: newSize)
+      }
+      .onReceive(NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification)) { _ in
+        Log.debug("Device orientation changed")
+        widgetManager.updateGridConfig(for: geometry.size)
       }
     }
     .onAppear {
       UINotificationFeedbackGenerator().notificationOccurred(.success)
     }
+  }
+
+  var headerView: some View {
+      Button(action: { isAddingWidget = true }) {
+        Image(systemName: "plus")
+      }
+      .accessibilityLabel("WidgetOrganizer.Toolbar.Accessibility")
+      .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+      .padding(24)
+    }
+
+  var tabsView: some View {
+    TabView(selection: $selectedPage) {
+      ForEach(0..<widgetManager.pageCount, id: \.self) { page in
+        GridView(
+          selectedPage: $selectedPage,
+          page: page
+        )
+        .ignoresSafeArea()
+        .environmentObject(widgetManager)
+        .environmentObject(dataManager)
+        .environmentObject(locationManager)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .tag(page)
+      }
+    }
+    .tabViewStyle(.page)
+    .indexViewStyle(.page(backgroundDisplayMode: .always))
+    .animation(.easeInOut, value: selectedPage)
   }
 }
 

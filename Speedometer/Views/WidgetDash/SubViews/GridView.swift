@@ -6,10 +6,10 @@
 //
 import SwiftUI
 
-import SwiftUI
-
 struct GridView: View {
   @Environment(\.theme) private var theme
+  @Environment(\.safeAreaInsets) private var safeAreaInsets
+
   @EnvironmentObject private var widgetManager: WidgetOrganizer
   @EnvironmentObject private var dataManager: DataManager
   @EnvironmentObject private var locationManager: LocationManager
@@ -22,7 +22,6 @@ struct GridView: View {
       ZStack {
         GridBackgroundView(config: widgetManager.gridConfig)
           .environment(\.theme, theme)
-
         if let dragged = draggedWidget, dragged.position.page == page,
            widgetManager.isPositionAvailable(for: dragged.size, at: dragged.position, excluding: dragged.id) {
           WidgetView(widget: dragged, isDragging: true)
@@ -33,8 +32,8 @@ struct GridView: View {
             .opacity(0.5)
             .cornerRadius(theme.widgetCornerRadius)
             .position(
-              x: CGFloat(dragged.position.column) * widgetManager.gridConfig.cellSize + Double(dragged.size.gridSize.width) * widgetManager.gridConfig.cellSize / 2 + 16,
-              y: CGFloat(dragged.position.row) * widgetManager.gridConfig.cellSize + Double(dragged.size.gridSize.height) * widgetManager.gridConfig.cellSize / 2 + 16
+              x: CGFloat(dragged.position.column) * widgetManager.gridConfig.cellSize + Double(dragged.size.gridSize.width) * widgetManager.gridConfig.cellSize / 2,
+              y: CGFloat(dragged.position.row) * widgetManager.gridConfig.cellSize + Double(dragged.size.gridSize.height) * widgetManager.gridConfig.cellSize / 2 
             )
             .environment(\.theme, dragged.theme?.theme ?? theme)
             .environmentObject(widgetManager)
@@ -50,8 +49,8 @@ struct GridView: View {
             geometry: geometry
           )
           .position(
-            x: CGFloat(widget.position.column) * widgetManager.gridConfig.cellSize + Double(widget.size.gridSize.width) * widgetManager.gridConfig.cellSize / 2 + 16,
-            y: CGFloat(widget.position.row) * widgetManager.gridConfig.cellSize + Double(widget.size.gridSize.height) * widgetManager.gridConfig.cellSize / 2 + 16
+            x: CGFloat(widget.position.column) * widgetManager.gridConfig.cellSize + Double(widget.size.gridSize.width) * widgetManager.gridConfig.cellSize / 2 ,
+            y: CGFloat(widget.position.row) * widgetManager.gridConfig.cellSize + Double(widget.size.gridSize.height) * widgetManager.gridConfig.cellSize / 2
           )
           .zIndex(draggedWidget?.id == widget.id ? 1 : 0)
           .environment(\.theme, widget.theme?.theme ?? theme)
@@ -61,7 +60,7 @@ struct GridView: View {
         }
       }
       .frame(maxWidth: .infinity, maxHeight: .infinity)
-      .padding(16)
+      .padding(.top, safeAreaInsets.top)
       .applyStyle(.container(.background))
     }
   }

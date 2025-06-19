@@ -16,6 +16,12 @@ struct GForceDotView: View {
   @Environment(\.theme) private var theme
   @State private var animatedPoint: CGPoint = .zero
 
+  private var widgetTheme: ViewStyleConfiguration {
+    theme.style(for: .container(.widget))
+  }
+
+
+
   init(currentAcceleration: CGPoint, history: [CGPoint] = [], xAccelerationRange: ClosedRange<Double> = -3.0...3.0, yAccelerationRange: ClosedRange<Double> = -5.0...5.0) {
     self.currentAcceleration = currentAcceleration
     self.history = history

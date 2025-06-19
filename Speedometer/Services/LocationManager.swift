@@ -90,11 +90,11 @@ class LocationManager: NSObject, ObservableObject {
     if CMMotionActivityManager.isActivityAvailable() {
       motionActivityManager.startActivityUpdates(to: .main) { activity in
         if let activity = activity {
-          print("Motion activity: \(activity)")
+          Log.debug("Motion activity: \(activity)")
         }
       }
     } else {
-      print("Motion activity not available")
+      Log.debug("Motion activity not available")
     }
   }
 }
@@ -138,7 +138,7 @@ extension LocationManager: CLLocationManagerDelegate {
   }
 
   func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-    print("Location error: \(error)")
+    Log.debug("Location error: \(error)")
   }
 
   func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
@@ -184,7 +184,7 @@ extension LocationManager {
       try data.write(to: fileURL)
       telemetryRecording.removeAll() // Clear memory after saving
     } catch {
-      print("Failed to save run: \(error)")
+      Log.debug("Failed to save run: \(error)")
     }
   }
 
@@ -197,7 +197,7 @@ extension LocationManager {
       let data = try Data(contentsOf: fileURL)
       return try decoder.decode([TelemetryDataPoint].self, from: data)
     } catch {
-      print("Failed to load run: \(error)")
+      Log.debug("Failed to load run: \(error)")
       return nil
     }
   }

@@ -16,11 +16,18 @@ struct SpeedometerApp: App {
   init() {
     self.widgetManager = .init()
 
-#if DEBUG
-    let locationManager = LocationManager(isSimulating: true)
+    let locationManager = {
+
+#if targetEnvironment(simulator)
+      return LocationManager(isSimulating: true)
 #else
-    let locationManager = LocationManager(isSimulating: false)
+      if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
+        return LocationManager(isSimulating: true)
+      } else {
+        return LocationManager(isSimulating: false)
+      }
 #endif
+    }()
     self.locationManager = locationManager
     self.dataManager =  DataManager(locationManager: locationManager)
     Log.debug("Loaded SpeedometerDependency")
@@ -30,6 +37,7 @@ struct SpeedometerApp: App {
   var body: some Scene {
     WindowGroup {
       WidgetOrganizerView()
+        .environment(\.theme, .bmwLeather)
         .environmentObject(widgetManager)
         .environmentObject(dataManager)
         .environmentObject(locationManager)

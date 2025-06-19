@@ -52,6 +52,7 @@ struct Theme {
       return ViewStyleConfiguration(
         foregroundColor: gForceMeterStyle.dotColor,
         backgroundColor: gForceMeterStyle.seismographBackgroundColor,
+        accentColor: accentColor,
         font: primaryFont,
         padding: 8,
         cornerRadius: widgetCornerRadius
@@ -65,6 +66,7 @@ struct Theme {
       return ViewStyleConfiguration(
         foregroundColor: primaryColor,
         backgroundColor: .clear,
+        accentColor: accentColor,
         font: primaryFont,
         padding: 8,
         cornerRadius: 0
@@ -73,6 +75,7 @@ struct Theme {
       return ViewStyleConfiguration(
         foregroundColor: secondaryColor,
         backgroundColor: .clear,
+        accentColor: accentColor,
         font: primaryFont,
         padding: 6,
         cornerRadius: 0
@@ -81,6 +84,7 @@ struct Theme {
       return ViewStyleConfiguration(
         foregroundColor: primaryColor,
         backgroundColor: .clear,
+        accentColor: accentColor,
         font: primaryFont,
         padding: 4,
         cornerRadius: 0
@@ -89,6 +93,7 @@ struct Theme {
       return ViewStyleConfiguration(
         foregroundColor: secondaryColor,
         backgroundColor: .clear,
+        accentColor: accentColor,
         font: primaryFont,
         padding: 2,
         cornerRadius: 0
@@ -97,6 +102,7 @@ struct Theme {
       return ViewStyleConfiguration(
         foregroundColor: primaryColor,
         backgroundColor: .clear,
+        accentColor: accentColor,
         font: primaryFont.weight(.bold),
         padding: 4,
         cornerRadius: 0
@@ -110,6 +116,7 @@ struct Theme {
       return ViewStyleConfiguration(
         foregroundColor: .white,
         backgroundColor: primaryColor,
+        accentColor: accentColor,
         font: primaryFont,
         padding: 12,
         cornerRadius: containerCornerRadius
@@ -118,6 +125,7 @@ struct Theme {
       return ViewStyleConfiguration(
         foregroundColor: primaryColor,
         backgroundColor: backgroundColor,
+        accentColor: accentColor,
         font: primaryFont,
         padding: 12,
         cornerRadius: containerCornerRadius
@@ -126,6 +134,7 @@ struct Theme {
       return ViewStyleConfiguration(
         foregroundColor: .white,
         backgroundColor: .red,
+        accentColor: accentColor,
         font: primaryFont,
         padding: 12,
         cornerRadius: containerCornerRadius
@@ -139,6 +148,7 @@ struct Theme {
       return ViewStyleConfiguration(
         foregroundColor: primaryColor,
         backgroundColor: backgroundColor.opacity(0.8),
+        accentColor: accentColor,
         font: primaryFont,
         padding: 16,
         cornerRadius: containerCornerRadius
@@ -147,6 +157,7 @@ struct Theme {
       return ViewStyleConfiguration(
         foregroundColor: primaryColor,
         backgroundColor: backgroundColor,
+        accentColor: accentColor,
         font: primaryFont,
         padding: 0,
         cornerRadius: 0,
@@ -156,6 +167,7 @@ struct Theme {
       return ViewStyleConfiguration(
         foregroundColor: primaryColor,
         backgroundColor: backgroundColor,
+        accentColor: accentColor,
         font: primaryFont,
         padding: 8,
         cornerRadius: widgetCornerRadius,
@@ -165,6 +177,7 @@ struct Theme {
       return ViewStyleConfiguration(
         foregroundColor: primaryColor,
         backgroundColor: backgroundColor,
+        accentColor: accentColor,
         font: primaryFont,
         padding: 8,
         cornerRadius: widgetCornerRadius,
