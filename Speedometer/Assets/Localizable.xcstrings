@@ -87,6 +87,19 @@
     "Notification: %@" : {
 
     },
+    "Page %lld of %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Page %1$lld of %2$lld"
+          }
+        }
+      }
+    },
+    "Page indicator" : {
+
+    },
     "Remove" : {
 
     },

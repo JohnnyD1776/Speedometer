@@ -15,6 +15,7 @@ struct AddWidgetView: View {
   @State private var selectedType: WidgetType = .speedGauge
   @State private var selectedSize: WidgetSize = .small
   @State private var selectedTheme: WidgetTheme? = nil
+  var currentPage: Int
 
   var body: some View {
     NavigationView {
@@ -54,11 +55,15 @@ struct AddWidgetView: View {
         }
         ToolbarItem(placement: .confirmationAction) {
           Button("Add") {
-            widgetManager.addWidget(
-              type: selectedType,
-              size: selectedSize,
-              theme: selectedTheme
-            )
+
+            widgetManager
+              .addWidget(
+                type: selectedType,
+                size: selectedSize,
+                theme: selectedTheme,
+                currentPage: currentPage
+              )
+
             isPresented = false
           }
           .accessibilityLabel("Add widget")

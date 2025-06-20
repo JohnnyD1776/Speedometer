@@ -24,11 +24,11 @@ class WidgetOrganizer: ObservableObject {
     return widgets.contains(where: { $0.position.page == highestPage }) ? highestPage + 2 : highestPage + 1
   }
 
-  func addWidget(type: WidgetType, size: WidgetSize? = nil, theme: WidgetTheme? = nil) {
+  func addWidget(type: WidgetType, size: WidgetSize? = nil, theme: WidgetTheme? = nil, currentPage: Int? = nil) {
     let targetSize = size ?? type.supportedSizes.first ?? .small
     guard type.supportedSizes.contains(targetSize) else { return }
 
-    if let position = findAvailablePosition(for: targetSize) {
+    if let position = findAvailablePosition(for: targetSize, currentPage: currentPage) {
       let newWidget = WidgetComponent(
         id: UUID(),
         type: type,
@@ -59,7 +59,7 @@ class WidgetOrganizer: ObservableObject {
       widgets[index].size = size
       saveWidgets()
       UINotificationFeedbackGenerator().notificationOccurred(.success)
-    } else if let newPosition = findAvailablePosition(for: size, preferringPage: currentPosition.page) {
+    } else if let newPosition = findAvailablePosition(for: size, currentPage: currentPosition.page) {
       widgets[index].size = size
       widgets[index].position = newPosition
       saveWidgets()
@@ -134,7 +134,7 @@ class WidgetOrganizer: ObservableObject {
         Log.debug("Placed at nearest position: (\(newPosition.column),\(newPosition.row))")
       } else {
         Log.debug("No position available for widget \(widget.id)")
-        if let fallbackPosition = findAvailablePosition(for: widget.size, preferringPage: widget.position.page, in: placedWidgets) {
+        if let fallbackPosition = findAvailablePosition(for: widget.size, currentPage: widget.position.page, in: placedWidgets) {
           placedWidgets.append(widget.withPosition(fallbackPosition))
           Log.debug("Placed at fallback position: (\(fallbackPosition.column),\(fallbackPosition.row))")
         }
@@ -144,9 +144,10 @@ class WidgetOrganizer: ObservableObject {
     saveWidgets()
   }
 
-  private func findAvailablePosition(for size: WidgetSize, preferringPage: Int? = nil, in widgets: [WidgetComponent] = []) -> GridPosition? {
+  private func findAvailablePosition(for size: WidgetSize, currentPage: Int? = nil, in widgets: [WidgetComponent] = []) -> GridPosition? {
     let (width, height) = size.gridSize
-    let pages = preferringPage != nil ? [min(preferringPage!, maxPages - 1)] + Array(0..<maxPages).filter { $0 != preferringPage } : Array(0..<maxPages)
+    // Prioritize currentPage if provided, otherwise scan all pages
+    let pages = currentPage != nil ? [min(currentPage!, maxPages - 1)] + Array(0..<maxPages).filter { $0 != currentPage } : Array(0..<maxPages)
 
     for page in pages {
       for row in 0...(gridConfig.rows - height) {
@@ -178,7 +179,7 @@ class WidgetOrganizer: ObservableObject {
         }
       }
     }
-    return findAvailablePosition(for: size, preferringPage: page, in: widgets)
+    return findAvailablePosition(for: size, currentPage: page, in: widgets)
   }
 
   func isPositionAvailable(for size: WidgetSize, at position: GridPosition, excluding excludeID: UUID? = nil, in widgets: [WidgetComponent] = []) -> Bool {
